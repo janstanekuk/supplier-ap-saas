@@ -1,6 +1,8 @@
-from fastapi import FastAPI
+from .routers import auth
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from .middleware.auth import verify_org_access
 import logging
 
 from .config import settings
@@ -54,6 +56,20 @@ async def root():
         "docs": "/docs",
         "health": "/health"
     }
+# This will run for all protected routes
+@app.middleware("http")
+async def check_auth(request: Request, call_next):
+    # Skip auth for public endpoints
+    if request.url.path.startswith("/api/v1/auth"):
+        return await call_next(request)
+    
+    # All other /api/v1 routes require auth
+    if request.url.path.startswith("/api/v1"):
+        await verify_org_access(request)
+    
+    return await call_next(request)
+
+app.include_router(auth.router)
 
 @app.get("/health")
 async def health_check():
