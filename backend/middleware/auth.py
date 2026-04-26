@@ -8,21 +8,35 @@ async def verify_org_access(request: Request):
     """
     authorization = request.headers.get("Authorization")
     
-    if not authorization or not authorization.startswith("Bearer "):
+    if not authorization:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing or invalid token"
+            detail="Missing authorization header"
         )
     
-    token = authorization.replace("Bearer ", "")
+    # Extract token from "Bearer <token>"
+    parts = authorization.split(" ")
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authorization header format"
+        )
+    
+    token = parts[1]
+    
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing token"
+        )
     
     try:
         token_data = get_current_user(token)
         request.state.user_id = token_data.user_id
         request.state.organization_id = token_data.organization_id
         request.state.email = token_data.email
-    except Exception as e:
+    except HTTPException:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
+            detail="Invalid or expired token"
         )

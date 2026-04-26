@@ -1,8 +1,8 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Optional
 
 class SignupRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
     organization_name: str
     full_name: Optional[str] = None
@@ -15,7 +15,7 @@ class SignupResponse(BaseModel):
     token_type: str = "bearer"
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 class LoginResponse(BaseModel):
